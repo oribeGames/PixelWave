@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="es">
+<head>
+
+    <link rel="stylesheet" href="styles.css">
+
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>PixelWave — Radio en vivo</title>
+
+<link href="styles.css" rel="stylesheet">
+
+
+</head>
+<body>
+  <div class="overlay">
+    <header>
+      <div class="brand">
+        <div class="logo">PW</div>
+        <div>
+          <h1>PixelWave</h1>
+          <p class="lead">Radio en vivo — música libre, pixel vibes</p>
+        </div>
+      </div>
+      <div class="muted">Modo noche • Glass UI</div>
+    </header>
+
+    <div class="main">
+      <div class="catalog">
+        <h3 style="margin:0">Elige un género</h3>
+        <div class="hint">Haz clic en una tarjeta para ver estaciones y escuchar. Al volver al catálogo, el mini-reproductor aparecerá si ya escuchaste alguna estación.</div>
+
+        <div class="grid" id="genresGrid" style="margin-top:14px;">
+          <!-- tarjetas generadas por JS -->
+        </div>
+      </div>
+
+      <aside class="station-view" id="stationPanel" style="display:none;">
+        <img id="stationCover" class="station-cover" src="" alt="cover">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div class="station-meta">
+            <div style="flex:1">
+              <div class="station-title" id="stationName">—</div>
+              <div class="muted station-url" id="stationTags"></div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
+            <button class="btn" id="enterBtn">Escuchar (entrar a estación)</button>
+            <button class="btn" id="backToGenres">Volver</button>
+            <div style="margin-left:auto" class="muted">Fuente: Radio Browser</div>
+          </div>
+
+          <div class="hint">Dentro de la vista de estación no se muestran controles para evitar distracciones. La reproducción persiste en segundo plano.</div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- MINI PLAYER (hidden by default) -->
+  <div id="mini-player" aria-hidden="true">
+    <img id="mini-cover" src="" alt="cover">
+    <div class="mini-info">
+      <div class="mini-title" id="mini-title">Sin reproducción</div>
+      <div class="mini-controls">
+        <button id="mini-play" class="icon-btn play">▶</button>
+        <button id="mini-stop" class="icon-btn" title="Detener">■</button>
+        <input id="mini-volume" type="range" min="0" max="1" step="0.01" value="0.5" />
+      </div>
+    </div>
+  </div>
+
+  <!-- Hidden audio element (no visible default controls) -->
+  <audio id="audio" crossorigin="anonymous"></audio>
+
+</body>
+
+<script src="script.js"></script>
+
+
+</html>
