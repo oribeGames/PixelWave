@@ -22,6 +22,15 @@ const miniVolume = document.getElementById('mini-volume');
 
 const audio = document.getElementById('audio');
 
+const largePlayerModal = document.getElementById('large-player-modal');
+const modalCloseBtn = document.getElementById('modal-close-btn');
+const modalCover = document.getElementById('modal-cover');
+const modalStationName = document.getElementById('modal-station-name');
+const modalPlayBtn = document.getElementById('modal-play-btn');
+const modalPrevBtn = document.getElementById('modal-prev-btn');
+const modalNextBtn = document.getElementById('modal-next-btn');
+const modalVolumeSlider = document.getElementById('modal-volume-slider');
+
 let lastStation = null;       // info de la estación actual seleccionada
 let hasListened = false;      // si el usuario ya entró a una estación alguna vez
 let isPlaying = false;
@@ -99,22 +108,30 @@ function playStation(station){
   audio.src = station.url_resolved;
   audio.play().then(()=> {
     isPlaying = true;
-    updateMiniInfo(station);
+    updatePlayerUI(station);
     // While inside station view, mini-player stays hidden (per requirement)
     // But playback continues (audio element is hidden)
   }).catch(err=>{
     console.warn('Play failed (autoplay policies?)', err);
     // still update info
-    updateMiniInfo(station);
+    updatePlayerUI(station);
   });
 }
 
 /* -----------------------
    MINI PLAYER CONTROL
    ----------------------- */
-function updateMiniInfo(station){
-  miniCover.src = station?.favicon && station.favicon.trim() !== "" ? station.favicon : placeholderCover();
-  miniTitle.textContent = station?.name || 'Reproduciendo';
+function updatePlayerUI(station) {
+  const coverUrl = station?.favicon && station.favicon.trim() !== "" ? station.favicon : placeholderCover();
+  const stationNameText = station?.name || 'Reproduciendo';
+
+  // Mini player
+  miniCover.src = coverUrl;
+  miniTitle.textContent = stationNameText;
+
+  // Large player modal
+  modalCover.src = coverUrl;
+  modalStationName.textContent = stationNameText;
 }
 
 /* show/hide mini player with smooth transition */
@@ -136,12 +153,80 @@ backToGenres.onclick = () => {
   // show mini-player only if user already listened
   if(hasListened){
     // update cover/title to lastStation if available
-    if(lastStation && lastStation.station) updateMiniInfo(lastStation.station);
+    if(lastStation && lastStation.station) updatePlayerUI(lastStation.station);
     showMiniPlayer();
   } else {
     hideMiniPlayer();
   }
 };
+
+/* -----------------------
+   LARGE PLAYER MODAL CONTROL
+   ----------------------- */
+
+function openLargePlayer() {
+  if (!lastStation || !lastStation.station) return;
+
+  // Populate modal with current station data
+  updatePlayerUI(lastStation.station);
+
+  // Sync play/pause button state
+  modalPlayBtn.textContent = isPlaying ? '⏸' : '▶';
+
+  // Sync volume slider
+  modalVolumeSlider.value = audio.volume;
+
+  // Show the modal
+  largePlayerModal.style.display = 'flex';
+  setTimeout(() => {
+    largePlayerModal.classList.add('show');
+  }, 10); // Small delay to allow CSS transition
+}
+
+function closeLargePlayer() {
+  largePlayerModal.classList.remove('show');
+  setTimeout(() => {
+    largePlayerModal.style.display = 'none';
+  }, 300); // Wait for transition to finish
+}
+
+function playNextStation() {
+  if (!lastStation || !lastStation.list || lastStation.list.length === 0) return;
+  const currentIndex = lastStation.list.findIndex(s => s.stationuuid === lastStation.station.stationuuid);
+  const nextIndex = (currentIndex + 1) % lastStation.list.length;
+  const nextStation = lastStation.list[nextIndex];
+
+  lastStation.station = nextStation; // Update current station
+  playStation(nextStation);
+}
+
+function playPrevStation() {
+  if (!lastStation || !lastStation.list || lastStation.list.length === 0) return;
+  const currentIndex = lastStation.list.findIndex(s => s.stationuuid === lastStation.station.stationuuid);
+  const prevIndex = (currentIndex - 1 + lastStation.list.length) % lastStation.list.length;
+  const prevStation = lastStation.list[prevIndex];
+
+  lastStation.station = prevStation; // Update current station
+  playStation(prevStation);
+}
+
+
+// Event listeners for modal
+miniCover.addEventListener('click', openLargePlayer); // Open modal on mini player cover click
+modalCloseBtn.addEventListener('click', closeLargePlayer);
+largePlayerModal.querySelector('.large-player-overlay').addEventListener('click', closeLargePlayer);
+
+modalPlayBtn.addEventListener('click', () => {
+  if(audio.paused) {
+    audio.play();
+  } else {
+    audio.pause();
+  }
+});
+
+modalNextBtn.addEventListener('click', playNextStation);
+modalPrevBtn.addEventListener('click', playPrevStation);
+
 
 /* -----------------------
    Mini controls behavior
@@ -172,12 +257,30 @@ miniStop.addEventListener('click', () => {
 
 miniVolume.addEventListener('input', () => {
   audio.volume = parseFloat(miniVolume.value);
+  modalVolumeSlider.value = miniVolume.value;
+});
+
+modalVolumeSlider.addEventListener('input', () => {
+  audio.volume = parseFloat(modalVolumeSlider.value);
+  miniVolume.value = modalVolumeSlider.value;
 });
 
 /* Sync play/pause icon with audio events */
-audio.addEventListener('play', ()=> { miniPlay.textContent = '⏸'; isPlaying = true; });
-audio.addEventListener('pause', ()=> { miniPlay.textContent = '▶'; isPlaying = false; });
-audio.addEventListener('ended', ()=> { miniPlay.textContent = '▶'; isPlaying = false; });
+audio.addEventListener('play', ()=> {
+  miniPlay.textContent = '⏸';
+  modalPlayBtn.textContent = '⏸';
+  isPlaying = true;
+});
+audio.addEventListener('pause', ()=> {
+  miniPlay.textContent = '▶';
+  modalPlayBtn.textContent = '▶';
+  isPlaying = false;
+});
+audio.addEventListener('ended', ()=> {
+  miniPlay.textContent = '▶';
+  modalPlayBtn.textContent = '▶';
+  isPlaying = false;
+});
 
 /* -----------------------
    Helpers and init
